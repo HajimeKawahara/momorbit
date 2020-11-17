@@ -1,2 +1,2 @@
 # reachbat
-REACH  Binary Analysis Tool
+Mom orbit: Mommy's code for Kepler orbit.
