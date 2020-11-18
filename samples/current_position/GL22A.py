@@ -7,7 +7,7 @@ if __name__ == "__main__":
     from astropy import units as u
     from astropy.coordinates import SkyCoord
 
-    pre = Time('2020-9-16 2:00:00').jd
+    prediction_date='2020-9-16 2:00:00'
     
     JDYEAR=365.25 #Julian year
 #    JDYEAR=365. #Conventional Year
@@ -15,6 +15,7 @@ if __name__ == "__main__":
     P = 15.4275*JDYEAR #[day]
     T0=57447.0 + 2400000.5 #[JD]
     t=np.linspace(0,1,365)*P+T0        
+    pre = Time(prediction_date).jd
 
     #prediction position
     par=99.20 #parallax mas
@@ -31,7 +32,6 @@ if __name__ == "__main__":
     i=i/180*np.pi
     omegaA = w*np.pi/180.0      #[rad]
     OmegaL = node*np.pi/180.0    #[rad]
-
     
     #X,Y,Z=XYZf(t,T0,P,e,omegaA,OmegaL,a,i)
     dRA,dDec=amfunc.amf_relative(t,T0,P,e,omegaA,OmegaL,a,i,d)
@@ -41,8 +41,9 @@ if __name__ == "__main__":
     coord2 = SkyCoord(dRA_p[0]*u.arcsec, dDec_p[0]*u.arcsec, frame='icrs')
     pa_pre = coord1.position_angle(coord2).to(u.deg).value
     sep_pre = coord1.separation(coord2).to(u.arcsec)
-    print(pre)
-    print("Separation=",sep_pre,"arcsec")
+    
+    print(prediction_date)
+    print("Separation=",sep_pre)
     print("PA=",pa_pre,"degree")
     
     fig=plt.figure()

@@ -39,7 +39,15 @@ def amf_relative(t,T0,P,e,omegaA,OmegaL,a,i,d):
     dRA=Y/d
     dDec=X/d
     return dRA, dDec
-    
+
+def amf_relative_direct(t,T0,P,e,omegaA,OmegaL,a_angle,i):
+    #relative astrometric orbit as a function of a [arcsec]
+    X,Y,Z=XYZf(t,T0,P,e,omegaA,OmegaL,a_angle,i)
+    dRA=Y
+    dDec=X
+    return dRA, dDec
+
+
 if __name__ == "__main__":
     
     import matplotlib.pyplot as plt
