@@ -15,7 +15,7 @@ def rvf(t,T0,P,e,omega,Ksini,Vsys):
     cosE=np.cos(Ea)
     cosf=(-cosE + e)/(-1 + cosE*e)
     sinf=np.sqrt((-1 + cosE*cosE)*(-1 + e*e))/(-1 + cosE*e)
-    mask=(Ea>=np.pi)
+    mask=(Ea<np.pi)
     sinf[mask]=-sinf[mask]
     
     cosfpo=cosf*np.cos(omegaA)+sinf*np.sin(omegaA)
