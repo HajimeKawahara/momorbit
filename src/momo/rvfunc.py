@@ -1,7 +1,8 @@
 import numpy as np
+import sys
 from PyAstronomy import pyasl
 
-def rvf(t,T0,P,e,omega,Ksini,Vsys):
+def rvf(t,T0,P,e,omegaA,K,i,Vsys):
     ks = pyasl.MarkleyKESolver()
     n=2*np.pi/P
     M=n*(t-T0)
@@ -18,8 +19,9 @@ def rvf(t,T0,P,e,omega,Ksini,Vsys):
     mask=(Ea<np.pi)
     sinf[mask]=-sinf[mask]
     
-    cosfpo=cosf*np.cos(omegaA)+sinf*np.sin(omegaA)
+    cosfpo=cosf*np.cos(omegaA)-sinf*np.sin(omegaA)
     face=1.0/np.sqrt(1.0-e*e)
+    Ksini=K*np.sin(i)
     model = Vsys+Ksini*face*(cosfpo+e*np.cos(omegaA))
     
     return model
@@ -30,12 +32,13 @@ if __name__ == "__main__":
     t=np.linspace(0,1.0,100)
     T0=0
     P=0.25
-    e=0.3
+    e=0.85
     omegaA=np.pi
-    Ksini=3.0
+    K=3.0
+    i=np.pi/2.0
     Vsys=1.0
-    rv=rvf(t,T0,P,e,omegaA,Ksini,Vsys)
-    
+    rv=rvf(t,T0,P,e,omegaA,K,i,Vsys)
+    sys.exit()
     plt.plot(t,rv,".")
     plt.plot(t,rv)
     plt.show()
