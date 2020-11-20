@@ -6,6 +6,7 @@ import corner
 import emcee
 from momo import rvfunc
 from momo import amfunc
+from momo import momotools
 import sys
 
 #data import
@@ -48,7 +49,7 @@ def lnlike_ast(T0,P,e,omegaA,OmegaL,a,i,tast,x,y,asterr,sigunk_ast):
 
 def lnprior(p):
     T0,P,e,omegaA,K,Vsys,OmegaL,a,i,sigunk_rv,sigunk_ast = p
-    if 0.0 <= e < 1.0 and 0.0 <= i < 1.0 and 0.0 <= omegaA < 2.0*np.pi \
+    if 0.0 <= e < 1.0 and 0.0 <= i <= np.pi and 0.0 <= omegaA < 2.0*np.pi \
        and 0.0 <= OmegaL < 2.0*np.pi and 0.0 <= K and 0.0 <= a\
        and 0.0 <= sigunk_rv and 0.0 <= sigunk_ast:    
         return 0.0
@@ -80,7 +81,7 @@ trvw=np.linspace(trv[0]-P_in/2,trv[-1]+P_in/2,1000)
 rvmodel=rvfunc.rvf(trvw,T0_in,P_in,e_in,omegaA_in,K_in,i_in,Vsys_in)    
 
 tastw=np.linspace(0,P_in,1000)
-dra_model,ddec_model=amfunc.amf_relative_direct(tastw,T0_in,P_in,e_in,omegaA_in,OmegaL_in,a_in,i_in)
+dra_model,ddec_model=amfunc.amf_relative(tastw,T0_in,P_in,e_in,omegaA_in,OmegaL_in,a_in,i_in)
 
 
 fig=plt.figure(figsize=(25,7))
@@ -95,14 +96,19 @@ plt.gca().invert_xaxis()
 plt.show()
 #------------------------------
 pin=np.array([T0_in,P_in,e_in,omegaA_in,K_in,Vsys_in,OmegaL_in,a_in,i_in,sigunk_rv_in,sigunk_ast_in])
-nwalkers = 300
+nwalkers = 100
 ndim=len(pin)
 err=np.array([10.0,10.0,0.01,np.pi/1000,0.3,0.3,np.pi/1000,0.01,np.pi/1000,sigunk_rv_in*1.e-2,sigunk_ast_in*1.e-2])
 pos = [pin + err*np.random.randn(ndim) for i in range(nwalkers)]
 sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob, args=(trv, rv, e_rv, x, y, asterr))
-sampler.run_mcmc(pos, 50000,progress=True);
+sampler.run_mcmc(pos, 5000,progress=True);
 
-samples = sampler.get_chain(discard=100,thin=15,flat=True)
+samples = sampler.get_chain(discard=500,thin=15,flat=True)
+
+
+fig=plt.figure()
+plt.plot(samples[:,2],".")
+plt.show()
 
 fig=plt.figure(figsize=(25,7))
 ax=fig.add_subplot(121)
@@ -122,7 +128,7 @@ for ind in inds:
     samp=samples[ind]
     T0,P,e,omegaA,K,Vsys,OmegaL,a,i,sigunk_rv,sigunk_ast = samp
     rvmodel=rvfunc.rvf(trvw,T0,P,e,omegaA,K,i,Vsys)    
-    dra_model,ddec_model=amfunc.amf_relative_direct(tastw,T0,P,e,omegaA,OmegaL,a,i)
+    dra_model,ddec_model=amfunc.amf_relative(tastw,T0,P,e,omegaA,OmegaL,a,i)
 
     ax.plot(trvw,rvmodel,alpha=0.05,c="green")
     ax2.plot(dra_model,ddec_model,alpha=0.05,c="green")
@@ -130,11 +136,33 @@ for ind in inds:
 plt.show()
 
 
+Psmp=samples[:,1]
+esmp=samples[:,2]
+Ksmp=samples[:,4]
+dpc=1000.0/18.9878 #pc
+asmp=samples[:,7]*dpc #AU
+
+
+print("Ksmp",np.mean(Ksmp))
+print("esmp",np.mean(esmp))
+print("Psmp",np.mean(Psmp))
+print("asmp",np.mean(asmp))
+
+
+M2=momotools.KaPe2M1(Ksmp,asmp,Psmp,esmp)
+M1=momotools.Pa2M(Psmp,asmp)-M2
+masssmp=np.array([M1,M2]).T
+
+fig = corner.corner(masssmp, labels=["$M_1$","$M_2$"])
+plt.savefig("corner_mass_SB1AST.png")
+
+np.savez("sample_SB1AST.npz",samples)
+
 #corner
-labp=np.array(["T0","P","e","$\omega$","K","$V_{sys}$","$\Omega$","a","i","$\sigma_r$","$\sigma_a$"])
-fig = corner.corner(samples, labels=labp,
-                      truths=pin)
-plt.savefig("corner.png")
+#labp=np.array(["T0","P","e","$\omega$","K","$V_{sys}$","$\Omega$","a","i","$\sigma_r$","$\sigma_a$"])
+#fig = corner.corner(samples, labels=labp,
+#                      truths=pin)
+#plt.savefig("corner.png")
 
 
 #    Ksini = np.sin(i)*(2.0*np.pi)**(1.0/3.0)*Mp

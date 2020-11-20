@@ -64,7 +64,7 @@ def lnlike_ast(T0,P,e,omegaA,OmegaL,M1,M2,d,i,tast,x,y,asterr,sigunk_ast):
 
 def lnprior(p):
     T0,P,e,omegaA,M1,M2,Vsys,OmegaL,d,i,sigunk_rv,sigunk_ast = p
-    if 0.0 <= e < 1.0 and 0.0 <= i < 1.0 and 0.0 <= omegaA < 2.0*np.pi \
+    if 0.0 <= e < 1.0 and 0.0 <= i <= 2.0*np.pi and 0.0 <= omegaA < 2.0*np.pi \
        and 0.0 <= OmegaL < 2.0*np.pi and 0.0 <= M1 and 0.0 <= M2 and 0.0 <= a\
        and 0.0 <= sigunk_rv and 0.0 <= sigunk_ast:    
         return -0.5*(d_in - d)**2*inv_sigma2_d - np.log(inv_sigma2_d)
