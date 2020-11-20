@@ -13,7 +13,7 @@ META_PATH = os.path.join("src", "momo", "__init__.py")
 CLASSIFIERS = [
     "Programming Language :: Python",
 ]
-INSTALL_REQUIRES = ["numpy","tqdm","scipy","PyAstronomy","emcee","corner"]
+INSTALL_REQUIRES = ["numpy","tqdm","scipy","PyAstronomy","emcee","corner","astropy"]
 
 # END PROJECT SPECIFIC
 

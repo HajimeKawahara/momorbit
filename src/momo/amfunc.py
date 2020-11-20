@@ -33,14 +33,12 @@ def XYZf(t,T0,P,e,omegaA,OmegaL,a,i):
 
     return X,Y,Z
 
-def amf_relative(t,T0,P,e,omegaA,OmegaL,a,i,d):
-    #relative astrometric orbit  
-    X,Y,Z=XYZf(t,T0,P,e,omegaA,OmegaL,a,i)
-    dRA=Y/d
-    dDec=X/d
-    return dRA, dDec
+def amf_relative2(t,T0,P,e,omegaA,OmegaL,M1,M2,d,i):
+    a=momoconst.PM2a(P,M1+M2)
+    a_asec=a/d
+    return amf_relative(t,T0,P,e,omegaA,OmegaL,a_angle,i)
 
-def amf_relative_direct(t,T0,P,e,omegaA,OmegaL,a_angle,i):
+def amf_relative(t,T0,P,e,omegaA,OmegaL,a_angle,i):
     #relative astrometric orbit as a function of a [arcsec]
     X,Y,Z=XYZf(t,T0,P,e,omegaA,OmegaL,a_angle,i)
     dRA=Y
@@ -49,12 +47,12 @@ def amf_relative_direct(t,T0,P,e,omegaA,OmegaL,a_angle,i):
 
 
 if __name__ == "__main__":
-    
     import matplotlib.pyplot as plt
     from astropy.time import Time
     import sys
-    JDYEAR=365.25 #Julian year
-#    JDYEAR=365. #Conventional Year
+    from momo import momoconst
+    
+    JDYEAR=momoconst.JDYEAR #Julian year
 
     name="HIP11253"
 #    name="GL22A"

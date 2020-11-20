@@ -1,8 +1,20 @@
 import numpy as np
 import sys
 from PyAstronomy import pyasl
+from momo import momoconst
+
+Gcr=momoconst.get_G_cuberoot()
+fac=(2.0*np.pi)**(1.0/3.0)
+m23=-2.0/3.0
+m13=-1.0/3.0
+
+def rvf2(t,T0,P,e,omegaA,M1,M2,i,Vsys):
+    #RV of M1
+    K=fac*Gcr*M2*((M1+M2)**m12)*(P**m13)
+    return rvf(t,T0,P,e,omegaA,K,i,Vsys)
 
 def rvf(t,T0,P,e,omegaA,K,i,Vsys):
+    # semi amplitude is defined by K*sin(i)
     ks = pyasl.MarkleyKESolver()
     n=2*np.pi/P
     M=n*(t-T0)
