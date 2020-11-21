@@ -15,7 +15,7 @@ def rvf2(t,T0,P,e,omegaA,M1,M2,i,Vsys):
 
 def rvf2c(t,T0,P,e,omegaA,M1,M2,i,Vsys):
     #RV of M2 (companion)
-    K=fac*Gcr*M2*((M1+M2)**m23)*(P**m13)/np.sqrt(1.0 - e*e)
+    K=fac*Gcr*M1*((M1+M2)**m23)*(P**m13)/np.sqrt(1.0 - e*e)
     return -rvcoref(t,T0,P,e,omegaA,K,i) + Vsys
 
 def rvf1(t,T0,P,e,omegaA,K,i,Vsys):
