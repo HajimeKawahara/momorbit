@@ -36,7 +36,7 @@ def lnprob(p, trv, rv, e_rv, x, y, asterr):
     return lnp
 
 def lnlike_rv(T0,P,e,omegaA,K,i,Vsys,trv,rv,e_rv,sigunk_rv):
-    rvmodel=rvfunc.rvf(trv,T0,P,e,omegaA,K,i,Vsys)    
+    rvmodel=rvfunc.rvf1(trv,T0,P,e,omegaA,K,i,Vsys)    
     inv_sigma2 = 1.0/(e_rv**2 + sigunk_rv**2)
     lnRV=-0.5*(np.sum((rv-rvmodel)**2*inv_sigma2 - np.log(inv_sigma2)))    
     return lnRV 
@@ -78,7 +78,7 @@ sigunk_ast_in=np.mean(asterr)/10.0
 
 #Checking initial fit
 trvw=np.linspace(trv[0]-P_in/2,trv[-1]+P_in/2,1000)
-rvmodel=rvfunc.rvf(trvw,T0_in,P_in,e_in,omegaA_in,K_in,i_in,Vsys_in)    
+rvmodel=rvfunc.rvf1(trvw,T0_in,P_in,e_in,omegaA_in,K_in,i_in,Vsys_in)    
 
 tastw=np.linspace(0,P_in,1000)
 dra_model,ddec_model=amfunc.amf_relative(tastw,T0_in,P_in,e_in,omegaA_in,OmegaL_in,a_in,i_in)
@@ -127,7 +127,7 @@ inds= np.random.randint(len(samples), size=100)
 for ind in inds:
     samp=samples[ind]
     T0,P,e,omegaA,K,Vsys,OmegaL,a,i,sigunk_rv,sigunk_ast = samp
-    rvmodel=rvfunc.rvf(trvw,T0,P,e,omegaA,K,i,Vsys)    
+    rvmodel=rvfunc.rvf1(trvw,T0,P,e,omegaA,K,i,Vsys)    
     dra_model,ddec_model=amfunc.amf_relative(tastw,T0,P,e,omegaA,OmegaL,a,i)
 
     ax.plot(trvw,rvmodel,alpha=0.05,c="green")

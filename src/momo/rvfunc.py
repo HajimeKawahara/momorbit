@@ -11,9 +11,18 @@ m13=-1.0/3.0
 def rvf2(t,T0,P,e,omegaA,M1,M2,i,Vsys):
     #RV of M1
     K=fac*Gcr*M2*((M1+M2)**m23)*(P**m13)/np.sqrt(1.0 - e*e)
-    return rvf(t,T0,P,e,omegaA,K,i,Vsys)
+    return rvcoref(t,T0,P,e,omegaA,K,i) + Vsys
 
-def rvf(t,T0,P,e,omegaA,K,i,Vsys):
+def rvf2c(t,T0,P,e,omegaA,M1,M2,i,Vsys):
+    #RV of M2 (companion)
+    K=fac*Gcr*M2*((M1+M2)**m23)*(P**m13)/np.sqrt(1.0 - e*e)
+    return -rvcoref(t,T0,P,e,omegaA,K,i) + Vsys
+
+def rvf1(t,T0,P,e,omegaA,K,i,Vsys):
+    return rvcoref(t,T0,P,e,omegaA,K,i) + Vsys
+
+
+def rvcoref(t,T0,P,e,omegaA,K,i):
     # semi amplitude is defined by K*sin(i)
     ks = pyasl.MarkleyKESolver()
     n=2*np.pi/P
@@ -34,8 +43,8 @@ def rvf(t,T0,P,e,omegaA,K,i,Vsys):
     cosfpo=cosf*np.cos(omegaA)-sinf*np.sin(omegaA)
     face=1.0/np.sqrt(1.0-e*e)
     Ksini=K*np.sin(i)
-    model = Vsys+Ksini*face*(cosfpo+e*np.cos(omegaA))
-    
+    model = Ksini*face*(cosfpo+e*np.cos(omegaA))
+
     return model
 
 
