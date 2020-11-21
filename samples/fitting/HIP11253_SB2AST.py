@@ -95,7 +95,7 @@ omegaA_in = w*np.pi/180.0      #[rad]
 OmegaL_in = node*np.pi/180.0    #[rad]
 Vsys_in=2.25
 MA_in = 1.0
-MB_in = 0.7
+MB_in = 0.4
 sigunk_rv_in=np.mean(e_rv)/10.0
 sigunk_ast_in=np.mean(asterr)/10.0
 
