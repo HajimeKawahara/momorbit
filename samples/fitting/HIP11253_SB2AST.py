@@ -25,39 +25,39 @@ y=sep*np.cos(pa)
 asterr=datast["e_sep"].values
 
 #REACH value
-trvA=np.array([])
-trvB=np.array([])
-rvA=np.array([])
-rvB=np.array([])
+tR0=Time('2020-9-4').jd
+trvA=np.array([tR0])
+trvB=np.array([tR0])
+rvA=np.array([5.21])
+rvB=np.array([-1.50])
 e_rvA=np.array([0.1])
 e_rvB=np.array([0.1])
 
-#GAIA DISTANCE
-dGAIA=
-sigma_d=
+#GAIA DR2 DISTANCE
+d_in=1000.0/18.9878 #pc
+sigma_d=d_in*0.6268/18.9878
 inv_sigma2_d=1.0/sigma_d/sigma_d
 
 #Setting a probability model
 def lnprob(p, trv, rv, e_rv, x, y, asterr):
-    T0,P,e,omegaA,M1,M2,Vsys,OmegaL,d,i,sigunk_rv,sigunk_ast = p
+    T0,P,e,omegaA,MA,MB,Vsys,OmegaL,d,i,sigunk_rv,sigunk_ast = p
     lp = lnprior(p)
     if not np.isfinite(lp):
         return -np.inf
-    lnp = lp \
-        + lnlike_rv(T0,P,e,omegaA,MA,MB,i,Vsys,trv,rv,e_rv,sigunk_rv) \ #RV of A
-        + lnlike_rv(T0,P,e,omegaA,MA,MB,i,Vsys,trvA,rvA,e_rvA,0.0) \ # REACH A
-        + lnlike_rv(T0,P,e,omegaA,MB,MA,i,Vsys,trvB,rvB,e_rvB,0.0) \ # REACH B
-        + lnlike_ast(T0,P,e,omegaA,OmegaL,a,i,tast,x,y,asterr,sigunk_ast) # Speckle Imaging
+    lnp = lp + lnlike_rv(T0,P,e,omegaA,MA,MB,i,Vsys,trv,rv,e_rv,sigunk_rv) \
+          + lnlike_rv(T0,P,e,omegaA,MA,MB,i,Vsys,trvA,rvA,e_rvA,0.0) \
+          + lnlike_rv(T0,P,e,omegaA,MB,MA,i,Vsys,trvB,rvB,e_rvB,0.0) \
+          + lnlike_ast(T0,P,e,omegaA,OmegaL,MA,MB,d,i,tast,x,y,asterr,sigunk_ast) 
     return lnp
 
 def lnlike_rv(T0,P,e,omegaA,M1,M2,i,Vsys,trv,rv,e_rv,sigunk_rv):
-    rvmodel=rvfunc.rvf2(t,T0,P,e,omegaA,M1,M2,i,Vsys)    
+    rvmodel=rvfunc.rvf2(trv,T0,P,e,omegaA,M1,M2,i,Vsys)    
     inv_sigma2 = 1.0/(e_rv**2 + sigunk_rv**2)
     lnRV=-0.5*(np.sum((rv-rvmodel)**2*inv_sigma2 - np.log(inv_sigma2)))    
     return lnRV 
 
 def lnlike_ast(T0,P,e,omegaA,OmegaL,M1,M2,d,i,tast,x,y,asterr,sigunk_ast):
-    dra_model,ddec_model=amf_relative2(t,T0,P,e,omegaA,OmegaL,M1,M2,d,i)    
+    dra_model,ddec_model=amfunc.amf_relative2(tast,T0,P,e,omegaA,OmegaL,M1,M2,d,i)    
     inv_sigma2 = 1.0/(asterr**2 + sigunk_ast**2)
     lnAST=-0.5*(np.sum(((x-dra_model)**2 + (y-ddec_model)**2)*inv_sigma2 - np.log(inv_sigma2)))    
     return lnAST
@@ -65,7 +65,7 @@ def lnlike_ast(T0,P,e,omegaA,OmegaL,M1,M2,d,i,tast,x,y,asterr,sigunk_ast):
 def lnprior(p):
     T0,P,e,omegaA,M1,M2,Vsys,OmegaL,d,i,sigunk_rv,sigunk_ast = p
     if 0.0 <= e < 1.0 and 0.0 <= i <= 2.0*np.pi and 0.0 <= omegaA < 2.0*np.pi \
-       and 0.0 <= OmegaL < 2.0*np.pi and 0.0 <= M1 and 0.0 <= M2 and 0.0 <= a\
+       and 0.0 <= OmegaL < 2.0*np.pi and 0.0 <= M1 and 0.0 <= M2 and 0.0 <= d\
        and 0.0 <= sigunk_rv and 0.0 <= sigunk_ast:    
         return -0.5*(d_in - d)**2*inv_sigma2_d - np.log(inv_sigma2_d)
     
@@ -82,42 +82,46 @@ e_in = 0.89
 i_in = 133.5       #[deg]
 node = 214.8    #[deg]
 w = 110.3      #[deg]
-M1 = 
 
 i_in=i_in/180*np.pi
 omegaA_in = w*np.pi/180.0      #[rad]
 OmegaL_in = node*np.pi/180.0    #[rad]
 K_in=6.29
 Vsys_in=2.25
+MA_in = 1.2
+MB_in = 0.4
 sigunk_rv_in=np.mean(e_rv)/10.0
 sigunk_ast_in=np.mean(asterr)/10.0
 
 #Checking initial fit
 trvw=np.linspace(trv[0]-P_in/2,trv[-1]+P_in/2,1000)
-#rvmodel=rvfunc.rvf(trvw,T0_in,P_in,e_in,omegaA_in,K_in,i_in,Vsys_in)    
-
+rvmodel=rvfunc.rvf2(trvw,T0_in,P_in,e_in,omegaA_in,MA_in,MB_in,i_in,Vsys_in)
 tastw=np.linspace(0,P_in,1000)
-#dra_model,ddec_model=amfunc.amf_relative_direct(tastw,T0_in,P_in,e_in,omegaA_in,OmegaL_in,a_in,i_in)
+dra_model,ddec_model=amfunc.amf_relative2(tastw,T0_in,P_in,e_in,omegaA_in,OmegaL_in,MA_in,MB_in,d_in,i_in)
 
 
 fig=plt.figure(figsize=(25,7))
 ax=fig.add_subplot(121)
 ax.plot(trvw,rvmodel)
 ax.plot(trv,rv,"*")
+ax.plot(trvA,rvA,"^")
+ax.plot(trvB,rvB,"s")
+
 plt.axhline(Vsys_in,ls="dashed")
 ax=fig.add_subplot(122)
 ax.plot(dra_model,ddec_model)
 ax.plot(x,y,"*")
 plt.gca().invert_xaxis()
 plt.show()
+
 #------------------------------
 pin=np.array([T0_in,P_in,e_in,omegaA_in,MA_in,MB_in,Vsys_in,OmegaL_in,d_in,i_in,sigunk_rv_in,sigunk_ast_in])
-nwalkers = 300
+nwalkers = 100
 ndim=len(pin)
-err=np.array([10.0,10.0,0.01,np.pi/1000,0.3,0.3,0.3,np.pi/1000,sigma_d/10.0,np.pi/1000,sigunk_rv_in*1.e-2,sigunk_ast_in*1.e-2])
+err=np.array([10.0,10.0,0.01,np.pi/1000,0.3,0.2,0.3,np.pi/1000,sigma_d/10.0,np.pi/1000,sigunk_rv_in*1.e-2,sigunk_ast_in*1.e-2])
 pos = [pin + err*np.random.randn(ndim) for i in range(nwalkers)]
 sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob, args=(trv, rv, e_rv, x, y, asterr))
-sampler.run_mcmc(pos, 50000,progress=True);
+sampler.run_mcmc(pos, 500,progress=True);
 
 samples = sampler.get_chain(discard=100,thin=15,flat=True)
 
@@ -139,19 +143,24 @@ for ind in inds:
     samp=samples[ind]
     T0,P,e,omegaA,K,Vsys,OmegaL,a,i,sigunk_rv,sigunk_ast = samp
     rvmodel=rvfunc.rvf(trvw,T0,P,e,omegaA,K,i,Vsys)    
-    dra_model,ddec_model=amfunc.amf_relative_direct(tastw,T0,P,e,omegaA,OmegaL,a,i)
+    dra_model,ddec_model=amfunc.amf_relative(tastw,T0,P,e,omegaA,OmegaL,a,i)
 
     ax.plot(trvw,rvmodel,alpha=0.05,c="green")
     ax2.plot(dra_model,ddec_model,alpha=0.05,c="green")
 
 plt.show()
 
+#pin=np.array([T0_in,P_in,e_in,omegaA_in,MA_in,MB_in,Vsys_in,OmegaL_in,d_in,i_in,sigunk_rv_in,sigunk_ast_in])
+
+fig = corner.corner(samples[:,4:6], labels=["$M_A$","M_B"])
+plt.savefig("corner_mass_SB2AST.png")
+
 
 #corner
-labp=np.array(["T0","P","e","$\omega$","K","$V_{sys}$","$\Omega$","a","i","$\sigma_r$","$\sigma_a$"])
-fig = corner.corner(samples, labels=labp,
-                      truths=pin)
-plt.savefig("corner.png")
+#labp=np.array(["T0","P","e","$\omega$","MA", "MB","$V_{sys}$","$\Omega$","a","i","$\sigma_r$","$\sigma_a$"])
+#fig = corner.corner(samples, labels=labp,
+#                      truths=pin)
+#plt.savefig("corner.png")
 
 
 #    Ksini = np.sin(i)*(2.0*np.pi)**(1.0/3.0)*Mp

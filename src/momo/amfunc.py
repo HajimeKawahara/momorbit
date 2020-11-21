@@ -1,5 +1,6 @@
 import numpy as np
 from PyAstronomy import pyasl
+from momo import momotools
 
 def XYZf(t,T0,P,e,omegaA,OmegaL,a,i):
     #position
@@ -34,9 +35,9 @@ def XYZf(t,T0,P,e,omegaA,OmegaL,a,i):
     return X,Y,Z
 
 def amf_relative2(t,T0,P,e,omegaA,OmegaL,M1,M2,d,i):
-    a=momoconst.PM2a(P,M1+M2)
+    a=momotools.PM2a(P,M1+M2)
     a_asec=a/d
-    return amf_relative(t,T0,P,e,omegaA,OmegaL,a_angle,i)
+    return amf_relative(t,T0,P,e,omegaA,OmegaL,a_asec,i)
 
 def amf_relative(t,T0,P,e,omegaA,OmegaL,a_angle,i):
     #relative astrometric orbit as a function of a [arcsec]
