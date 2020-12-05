@@ -26,8 +26,12 @@ asterr=datast["e_sep"].values
 
 #Setting a probability model
 def lnprob(p, trv, rv, e_rv, x, y, asterr):
-    T0,P,e,omegaA,K,Vsys,OmegaL,a,i,sigunk_rv,sigunk_ast = p
+    T0,P,se_coso,se_sino,K,Vsys,OmegaL,a,cosi,sigunk_rv,sigunk_ast = p
     lp = lnprior(p)
+    e=se_coso**2+se_sino**2
+    omegaA=np.arctan2(se_sino,se_coso)
+    i=np.arccos(cosi)
+    
     if not np.isfinite(lp):
         return -np.inf
     lnp = lp \
@@ -48,10 +52,31 @@ def lnlike_ast(T0,P,e,omegaA,OmegaL,a,i,tast,x,y,asterr,sigunk_ast):
     return lnAST
 
 def lnprior(p):
-    T0,P,e,omegaA,K,Vsys,OmegaL,a,i,sigunk_rv,sigunk_ast = p
-    if 0.0 <= e < 1.0 and 0.0 <= i <= np.pi and 0.0 <= omegaA < 2.0*np.pi \
-       and 0.0 <= OmegaL < 2.0*np.pi and 0.0 <= K and 0.0 <= a\
-       and 0.0 <= sigunk_rv and 0.0 <= sigunk_ast:    
+    T0_pmin=0.0
+    T0_pmax=10000000.0
+    P_pmin=0.0
+    P_pmax=1000.0*365
+    K_pmax=1000.0
+    Vsys_pmin=-1000.0
+    Vsys_pmax=1000.0
+    a_pmin=0.0
+    a_pmax=1000.0
+    sigunk_rv_pmax=1000.0
+    sigunk_ast_pmax=1000.0
+    
+    T0,P,se_coso,se_sino,K,Vsys,OmegaL,a,cosi,sigunk_rv,sigunk_ast = p
+    e = (se_coso)**2 + (se_sino)**2
+    if T0_pmin <= T0 < T0_pmax \
+       and P_pmin <= P < P_pmax \
+       and -1.0 <= se_coso < 1.0 and -1.0 <= se_sino < 1.0 and 0.0 < e < 1.0\
+       and 0.0 <= K < K_pmax \
+       and Vsys_pmin <= Vsys < Vsys_pmax \
+       and 0.0 <= OmegaL < 2.0*np.pi \
+       and a_pmin <= a < a_pmax \
+       and -1.0 <= cosi <= 1.0 \
+       and 0.0 <= sigunk_rv < sigunk_rv_pmax \
+       and 0.0 <= sigunk_ast < sigunk_ast_pmax:    
+    
         return 0.0
     
     return -np.inf
@@ -95,15 +120,20 @@ ax.plot(x,y,"*")
 plt.gca().invert_xaxis()
 plt.show()
 #------------------------------
-pin=np.array([T0_in,P_in,e_in,omegaA_in,K_in,Vsys_in,OmegaL_in,a_in,i_in,sigunk_rv_in,sigunk_ast_in])
+
+#pin=np.array([T0_in,P_in,e_in,omegaA_in,K_in,Vsys_in,OmegaL_in,a_in,i_in,sigunk_rv_in,sigunk_ast_in])
+pin=np.array([T0_in,P_in,np.sqrt(e_in)*np.cos(omegaA_in),np.sqrt(e_in)*np.sin(omegaA_in),K_in,Vsys_in,OmegaL_in,a_in,np.cos(i_in),sigunk_rv_in,sigunk_ast_in])
+
 nwalkers = 100
 ndim=len(pin)
-err=np.array([10.0,10.0,0.01,np.pi/1000,0.3,0.3,np.pi/1000,0.01,np.pi/1000,sigunk_rv_in*1.e-2,sigunk_ast_in*1.e-2])
+#err=np.array([10.0,10.0,0.01,np.pi/1000,0.3,0.3,np.pi/1000,0.01,np.pi/1000,sigunk_rv_in*1.e-2,sigunk_ast_in*1.e-2])
+err=np.array([10.0,10.0,0.01,0.01,0.3,0.3,np.pi/1000,0.01,0.01,sigunk_rv_in*1.e-2,sigunk_ast_in*1.e-2])
+
 pos = [pin + err*np.random.randn(ndim) for i in range(nwalkers)]
 sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob, args=(trv, rv, e_rv, x, y, asterr))
-sampler.run_mcmc(pos, 5000,progress=True);
+sampler.run_mcmc(pos, 500,progress=True)
 
-samples = sampler.get_chain(discard=500,thin=15,flat=True)
+samples = sampler.get_chain(discard=100,thin=15,flat=True)
 
 
 fig=plt.figure()
@@ -126,7 +156,14 @@ tastw=np.linspace(0,P_in,1000)
 inds= np.random.randint(len(samples), size=100)
 for ind in inds:
     samp=samples[ind]
-    T0,P,e,omegaA,K,Vsys,OmegaL,a,i,sigunk_rv,sigunk_ast = samp
+#    T0,P,e,omegaA,K,Vsys,OmegaL,a,i,sigunk_rv,sigunk_ast = samp
+    T0,P,se_coso,se_sino,K,Vsys,OmegaL,a,cosi,sigunk_rv,sigunk_ast = samp
+    i=np.arccos(cosi)
+    e = se_coso**2+se_sino**2    
+    omegaA=np.arctan2(se_sino,se_coso)
+#    mask=omegaA<0
+#    omegaA[mask]=omega[mask]+2*np.pi
+    
     rvmodel=rvfunc.rvf1(trvw,T0,P,e,omegaA,K,i,Vsys)    
     dra_model,ddec_model=amfunc.amf_relative(tastw,T0,P,e,omegaA,OmegaL,a,i)
 
@@ -159,10 +196,10 @@ plt.savefig("corner_mass_SB1AST.png")
 np.savez("sample_SB1AST.npz",samples)
 
 #corner
-#labp=np.array(["T0","P","e","$\omega$","K","$V_{sys}$","$\Omega$","a","i","$\sigma_r$","$\sigma_a$"])
-#fig = corner.corner(samples, labels=labp,
-#                      truths=pin)
-#plt.savefig("corner.png")
+labp=np.array(["T0","P","$\sqrt{e} \cos{\omega}$","$\sqrt{e} \sin{\omega}$","K","$V_{sys}$","$\Omega$","a","$\cos{i}$","$\sigma_r$","$\sigma_a$"])
+fig = corner.corner(samples, labels=labp,
+                      truths=pin)
+plt.savefig("corner.png")
 
 
 #    Ksini = np.sin(i)*(2.0*np.pi)**(1.0/3.0)*Mp

@@ -40,8 +40,13 @@ inv_sigma2_d=1.0/sigma_d/sigma_d
 
 #Setting a probability model
 def lnprob(p, trv, rv, e_rv, x, y, asterr):
-    T0,P,e,omegaA,MA,MB,Vsys,OmegaL,d,i,sigunk_rv,sigunk_ast = p
+#    T0,P,e,omegaA,MA,MB,Vsys,OmegaL,d,i,sigunk_rv,sigunk_ast = p
+    T0,P,se_coso,se_sino,MA,MB,Vsys,OmegaL,d,cosi,sigunk_rv,sigunk_ast = p
     lp = lnprior(p)
+    e=se_coso**2+se_sino**2
+    omegaA=np.arctan2(se_sino,se_coso)
+    i=np.arccos(cosi)
+
     if not np.isfinite(lp):
         return -np.inf
     lnp = lp + lnlike_rvA(T0,P,e,omegaA,MA,MB,i,Vsys,trv,rv,e_rv,sigunk_rv) \
@@ -70,13 +75,48 @@ def lnlike_ast(T0,P,e,omegaA,OmegaL,M1,M2,d,i,tast,x,y,asterr,sigunk_ast):
     return lnAST
 
 def lnprior(p):
-    T0,P,e,omegaA,M1,M2,Vsys,OmegaL,d,i,sigunk_rv,sigunk_ast = p
-    if 0.0 <= e < 1.0 and 0.0 <= i <= 2.0*np.pi and 0.0 <= omegaA < 2.0*np.pi \
-       and 0.0 <= OmegaL < 2.0*np.pi and 0.0 <= M1 and 0.0 <= M2 and 0.0 <= d\
-       and 0.0 <= sigunk_rv and 0.0 <= sigunk_ast:    
+    T0_pmin=0.0
+    T0_pmax=10000000.0
+    P_pmin=0.0
+    P_pmax=1000.0*365
+    K_pmax=1000.0
+    Vsys_pmin=-1000.0
+    Vsys_pmax=1000.0
+    M1_pmin=0.0
+    M1_pmax=100.0
+    M2_pmin=0.0
+    M2_pmax=100.0
+
+    sigunk_rv_pmax=1000.0
+    sigunk_ast_pmax=1000.0
+
+    T0,P,se_coso,se_sino,M1,M2,Vsys,OmegaL,d,cosi,sigunk_rv,sigunk_ast = p
+
+    e = (se_coso)**2 + (se_sino)**2
+    if T0_pmin <= T0 < T0_pmax \
+       and P_pmin <= P < P_pmax \
+       and -1.0 <= se_coso < 1.0 and -1.0 <= se_sino < 1.0 and 0.0 < e < 1.0\
+       and M1_pmin <= M1 < M1_pmax \
+       and M2_pmin <= M2 < M2_pmax \
+       and Vsys_pmin <= Vsys < Vsys_pmax \
+       and 0.0 <= OmegaL < 2.0*np.pi \
+       and -1.0 <= cosi <= 1.0 \
+       and 0.0 <= sigunk_rv < sigunk_rv_pmax \
+       and 0.0 <= sigunk_ast < sigunk_ast_pmax:
+        
         return -0.5*(d_in - d)**2*inv_sigma2_d - np.log(inv_sigma2_d)
     
     return -np.inf
+
+
+#def lnprior(p):
+#    T0,P,e,omegaA,M1,M2,Vsys,OmegaL,d,i,sigunk_rv,sigunk_ast = p
+#    if 0.0 <= e < 1.0 and 0.0 <= i <= 2.0*np.pi and 0.0 <= omegaA < 2.0*np.pi \
+#       and 0.0 <= OmegaL < 2.0*np.pi and 0.0 <= M1 and 0.0 <= M2 and 0.0 <= d\
+#       and 0.0 <= sigunk_rv and 0.0 <= sigunk_ast:    
+#        return -0.5*(d_in - d)**2*inv_sigma2_d - np.log(inv_sigma2_d)
+#    
+#    return -np.inf
 
 #Initial Values
 JDYEAR=365.25 #Julian year
@@ -131,10 +171,15 @@ ax.plot(tast,y,"*",c="C1")
 
 plt.show()
 #------------------------------
-pin=np.array([T0_in,P_in,e_in,omegaA_in,MA_in,MB_in,Vsys_in,OmegaL_in,d_in,i_in,sigunk_rv_in,sigunk_ast_in])
+pin=np.array([T0_in,P_in,np.sqrt(e_in)*np.cos(omegaA_in),np.sqrt(e_in)*np.sin(omegaA_in),MA_in,MB_in,Vsys_in,OmegaL_in,d_in,np.cos(i_in),sigunk_rv_in,sigunk_ast_in])
+#pin=np.array([T0_in,P_in,np.sqrt(e_in)*np.cos(omegaA_in),np.sqrt(e_in)*np.sin(omegaA_in),K_in,Vsys_in,OmegaL_in,a_in,np.cos(i_in),sigunk_rv_in,sigunk_ast_in])
+
+
 nwalkers = 100
 ndim=len(pin)
-err=np.array([10.0,10.0,0.01,np.pi/1000,0.3,0.2,0.3,np.pi/1000,sigma_d/10.0,np.pi/1000,sigunk_rv_in*1.e-2,sigunk_ast_in*1.e-2])
+#err=np.array([10.0,10.0,0.01,np.pi/1000,0.3,0.2,0.3,np.pi/1000,sigma_d/10.0,np.pi/1000,sigunk_rv_in*1.e-2,sigunk_ast_in*1.e-2])
+err=np.array([10.0,10.0,0.01,0.01,0.3,0.2,0.3,np.pi/1000,sigma_d/10.0,0.01,sigunk_rv_in*1.e-2,sigunk_ast_in*1.e-2])
+
 pos = [pin + err*np.random.randn(ndim) for i in range(nwalkers)]
 sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob, args=(trv, rv, e_rv, x, y, asterr))
 sampler.run_mcmc(pos, 5000,progress=True);
@@ -164,7 +209,12 @@ tastw=np.linspace(0,P_in,1000)
 inds= np.random.randint(len(samples), size=100)
 for ind in inds:
     samp=samples[ind]
-    T0,P,e,omegaA,MA,MB,Vsys,OmegaL,d,i,sigunk_rv,sigunk_ast = samp
+#    T0,P,e,omegaA,MA,MB,Vsys,OmegaL,d,i,sigunk_rv,sigunk_ast = samp
+    T0,P,se_coso,se_sino,MA,MB,Vsys,OmegaL,d,cosi,sigunk_rv,sigunk_ast = samp
+    i=np.arccos(cosi)
+    e = se_coso**2+se_sino**2    
+    omegaA=np.arctan2(se_sino,se_coso)
+
     rvmodelA=rvfunc.rvf2(trvw,T0,P,e,omegaA,MA,MB,i,Vsys)    
     rvmodelB=rvfunc.rvf2c(trvw,T0,P,e,omegaA,MA,MB,i,Vsys)    
     dra_model,ddec_model=amfunc.amf_relative2(tastw,T0,P,e,omegaA,OmegaL,MA,MB,d,i)    
@@ -173,12 +223,11 @@ for ind in inds:
     ax2.plot(dra_model,ddec_model,alpha=0.05,c="green")
 plt.savefig("pred_SB2AST.png")
 
-
 #mass corner
-fig = corner.corner(samples[:,4:6], labels=["$M_A$","M_B"])
+fig = corner.corner(samples[:,4:6], labels=["$M_A$","$M_B$"])
 plt.savefig("corner_mass_SB2AST.png")
 
 #corner
-labp=np.array(["T0","P","e","$\omega$","$M_A$", "$M_B$","$V_{sys}$","$\Omega$","a","i","$\sigma_r$","$\sigma_a$"])
+labp=np.array(["T0","P","$\sqrt{e} \cos{\omega}$","$\sqrt{e} \sin{\omega}$","$M_A$", "$M_B$","$V_{sys}$","$\Omega$","a","$\cos{i}$","$\sigma_r$","$\sigma_a$"])
 fig = corner.corner(samples, labels=labp,truths=pin)
 plt.savefig("corner_all_SB2AST.png")
