@@ -1,3 +1,9 @@
+#
+# JAX version of Markley (Markley 1995, CeMDA, 63, 101) E solver getE()
+# The original code is taken from PyAstronomy (MIT license)
+# https://github.com/sczesla/PyAstronomy
+#
+
 import jax.numpy as jnp
 from jax import grad
 import numpy as np
@@ -85,29 +91,25 @@ def getE(M, e):
     # -pi and pi.
     flip = False
     pi=np.pi
-    M = M - (jnp.floor(M / (2. * pi)) * 2. * pi)
-    if M > jnp.pi:
-        M = 2. * jnp.pi - M
-        # Flip the sign of result
-        # if this happened
-        flip = True
-    e = e
-    if M == 0.0:
-        return 0.0
-    alpha = _alpha(e, M)
+    Mt = M - (jnp.floor(M / (2. * pi)) * 2. * pi)
+    Mt=jnp.where(M > pi,2.*pi - Mt,Mt)
+    Mt=jnp.where(Mt==0.0,0.0,Mt)
+    
+    alpha = _alpha(e, Mt)
     d = _d(alpha, e)
-    r = _r(alpha, d, M, e)
-    q = _q(alpha, d, e, M)
+    r = _r(alpha, d, Mt, e)
+    q = _q(alpha, d, e, Mt)
     w = _w(r, q)
-    E1 = _E1(d, r, w, q, M)
-    f = _f01234(e, E1, M)
+    E1 = _E1(d, r, w, q, Mt)
+    f = _f01234(e, E1, Mt)
     d3 = _d3(E1, f)
     d4 = _d4(E1, f, d3)
     d5 = _d5(E1, f, d4)
     # Eq. 29
     E5 = E1 + d5
-    if flip:
-        E5 = 2. * pi - E5
+    #if flip:
+    E5=jnp.where(M > pi,2. * pi - E5,E5)
+    #    E5 = 2. * pi - E5
     E = E5
     return E5
 
